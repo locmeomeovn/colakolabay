@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Giáo viên - Quản lý Chợ Đồ</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Nunito', Arial, sans-serif; background: #f0faf8; min-height: 100vh; }
+
+/* HEADER */
+.header {
+  background: linear-gradient(135deg, #0f766e, #0d9488);
+  color: white;
+  padding: 14px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 16px rgba(15,118,110,0.35);
+  position: sticky; top: 0; z-index: 100;
+}
+.header h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.user-name { font-size: 14px; opacity: 0.92; font-weight: 600; }
+.btn-logout {
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.4);
+  color: white; padding: 6px 14px; border-radius: 8px;
+  cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 600;
+  transition: background 0.2s;
+}
+.btn-logout:hover { background: rgba(255,255,255,0.3); }
+
+/* CONTAINER */
+.container { max-width: 1050px; margin: 24px auto; padding: 0 16px; }
+
+/* STATS */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+.stat-card {
+  background: white; border-radius: 14px; padding: 20px;
+  text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  transition: transform 0.2s;
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-num { font-size: 32px; font-weight: 800; color: #0f766e; }
+.stat-label { font-size: 12px; color: #94a3b8; margin-top: 4px; font-weight: 700; }
+
+/* TABS */
+.tabs {
+  display: flex; gap: 8px; margin-bottom: 24px;
+  background: white; padding: 8px; border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.tab-btn {
+  padding: 10px 20px; border-radius: 9px; border: none;
+  background: transparent; cursor: pointer;
+  font-size: 14px; font-family: inherit; color: #64748b; font-weight: 600;
+  transition: all 0.2s; position: relative;
+}
+.tab-btn.active { background: #0f766e; color: white; box-shadow: 0 4px 12px rgba(15,118,110,0.35); }
+.tab-btn:hover:not(.active) { background: #f0faf8; color: #1e293b; }
+.tab-count {
+  background: #ef4444; color: white;
+  font-size: 11px; padding: 1px 6px; border-radius: 10px;
+  margin-left: 5px; font-weight: 700;
+}
+
+/* SECTIONS */
+.section { display: none; }
+.section.active { display: block; }
+
+/* GRID */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+
+/* CARD */
+.card {
+  background: white; border-radius: 16px; padding: 0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.11); }
+.card-img-placeholder {
+  width: 100%; height: 160px;
+  background: linear-gradient(135deg, #ccfbf1, #f0fdf9);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px; color: #99f6e4;
+}
+/* LIGHTBOX */
+.lightbox-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85); z-index: 9999;
+  align-items: center; justify-content: center; padding: 16px;
+  cursor: zoom-out;
+}
+.lightbox-overlay.show { display: flex; }
+.lightbox-overlay img {
+  max-width: 92vw; max-height: 88vh;
+  border-radius: 12px; object-fit: contain;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  cursor: default;
+}
+.lightbox-close {
+  position: fixed; top: 16px; right: 20px;
+  color: white; font-size: 28px; cursor: pointer;
+  line-height: 1; font-weight: 700; opacity: 0.8;
+}
+.lightbox-close:hover { opacity: 1; }
+.card-body { padding: 14px 16px 16px; }
+.card-title { font-size: 15px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+.card-owner { font-size: 13px; color: #0f766e; margin-bottom: 8px; font-weight: 600; }
+.card-desc { font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 14px; }
+
+/* ACTION BUTTONS */
+.btn-row { display: flex; gap: 8px; }
+.btn-approve {
+  flex: 1; padding: 10px;
+  background: #f0fdf4; color: #16a34a;
+  border: 1.5px solid #bbf7d0; border-radius: 8px;
+  cursor: pointer; font-family: inherit; font-weight: 700; font-size: 13px;
+  transition: all 0.2s;
+}
+.btn-approve:hover { background: #16a34a; color: white; border-color: #16a34a; }
+.btn-reject {
+  flex: 1; padding: 10px;
+  background: #fef2f2; color: #dc2626;
+  border: 1.5px solid #fecaca; border-radius: 8px;
+  cursor: pointer; font-family: inherit; font-weight: 700; font-size: 13px;
+  transition: all 0.2s;
+}
+.btn-reject:hover { background: #dc2626; color: white; border-color: #dc2626; }
+
+/* STATUS BADGE */
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 10px;
+}
+.badge-approved  { background: #dcfce7; color: #166534; }
+.badge-exchanged { background: #dbeafe; color: #1d4ed8; }
+.badge-done      { background: #f3e8ff; color: #7c3aed; }
+
+/* TRANSACTION TABLE */
+.trans-table-wrap {
+  background: white; border-radius: 16px; padding: 20px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow-x: auto;
+}
+.trans-table {
+  width: 100%; border-collapse: collapse; font-size: 14px;
+}
+.trans-table th {
+  text-align: left; padding: 10px 14px;
+  background: #f0fdf9; color: #0f766e;
+  font-weight: 800; font-size: 13px;
+  border-bottom: 2px solid #ccfbf1;
+}
+.trans-table td {
+  padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
+  color: #475569; vertical-align: middle;
+}
+.trans-table tr:hover td { background: #f8fffe; }
+.trans-table tr:last-child td { border-bottom: none; }
+
+/* EMPTY / LOADING */
+.empty { text-align: center; padding: 60px 20px; color: #94a3b8; font-size: 14px; font-weight: 600; }
+.empty-icon { font-size: 40px; margin-bottom: 10px; }
+.loading-text { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 Quản lý Chợ Đồ</h1>
+  <div class="header-right">
+    <span class="user-name" id="user-name"></span>
+    <button class="btn-logout" onclick="logout()">Đăng xuất</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num" id="stat-pending">-</div>
+      <div class="stat-label">⏳ Chờ duyệt</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-approved">-</div>
+      <div class="stat-label">✅ Đã duyệt / Chờ đổi</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-exchanged">-</div>
+      <div class="stat-label">🔄 Đã trao đổi</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="stat-done">-</div>
+      <div class="stat-label">📋 Giao dịch thành công</div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('pending', this)">
+      ⏳ Chờ duyệt <span class="tab-count" id="count-pending">0</span>
+    </button>
+    <button class="tab-btn" onclick="showTab('approved', this)">
+      ✅ Đã duyệt / Chờ đổi
+    </button>
+    <button class="tab-btn" onclick="showTab('exchanged', this)">
+      🔄 Đã trao đổi
+    </button>
+    <button class="tab-btn" onclick="showTab('done', this)">
+      📋 Lịch sử giao dịch
+    </button>
+    <button class="tab-btn" onclick="showTab('profile', this)">
+      👤 Thông tin
+    </button>
+  </div>
+
+  <!-- CHỜ DUYỆT -->
+  <div class="section active" id="tab-pending">
+    <div class="grid" id="pending-list">
+      <p class="loading-text">⏳ Đang tải...</p>
+    </div>
+  </div>
+
+  <!-- ĐÃ DUYỆT / CHỜ ĐỔI -->
+  <div class="section" id="tab-approved">
+    <div class="grid" id="approved-list">
+      <p class="loading-text">⏳ Đang tải...</p>
+    </div>
+  </div>
+
+  <!-- ĐÃ TRAO ĐỔI -->
+  <div class="section" id="tab-exchanged">
+    <div class="grid" id="exchanged-list">
+      <p class="loading-text">⏳ Đang tải...</p>
+    </div>
+  </div>
+
+  <!-- LỊCH SỬ GIAO DỊCH -->
+  <div class="section" id="tab-done">
+    <div class="trans-table-wrap">
+      <table class="trans-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Học sinh gửi</th>
+            <th>Học sinh nhận</th>
+            <th>Món đồ nhận được</th>
+            <th>Đổi bằng</th>
+            <th>Thời gian</th>
+          </tr>
+        </thead>
+        <tbody id="trans-list">
+          <tr><td colspan="5" class="loading-text">⏳ Đang tải...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- THÔNG TIN CÁ NHÂN -->
+  <div class="section" id="tab-profile">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;max-width:900px;" id="profile-grid">
+      <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+        <div style="font-size:17px;font-weight:800;color:#1e293b;margin-bottom:20px;">👤 Thông tin cá nhân</div>
+        <div style="background:#f0faf8;border-radius:12px;padding:18px;margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+            <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0f766e,#0d9488);display:flex;align-items:center;justify-content:center;font-size:26px;color:white;flex-shrink:0;" id="prof-avatar">?</div>
+            <div>
+              <div style="font-size:17px;font-weight:800;color:#1e293b;" id="prof-name-display">—</div>
+              <div style="font-size:13px;color:#0f766e;font-weight:600;">Giáo viên</div>
+            </div>
+          </div>
+          <div style="font-size:13px;color:#475569;display:flex;flex-direction:column;gap:6px;">
+            <div>📧 <span id="prof-email-display">—</span></div>
+          </div>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:#475569;margin-bottom:7px;font-weight:700;">Họ và tên ✏️</label>
+          <input id="prof-hoten" placeholder="Nhập họ và tên mới" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;color:#1e293b;transition:border 0.2s;outline:none;">
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:13px;color:#475569;margin-bottom:7px;font-weight:700;">Email 📧</label>
+          <input id="prof-email" type="email" placeholder="Nhập email" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;color:#1e293b;transition:border 0.2s;outline:none;">
+        </div>
+        <button onclick="saveProfileInfo()" id="btn-save-info" style="width:100%;padding:13px;background:linear-gradient(135deg,#0f766e,#0d9488);color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-family:inherit;font-weight:700;box-shadow:0 4px 14px rgba(15,118,110,0.35);">💾 Lưu thông tin</button>
+        <p id="info-msg" style="font-size:13px;margin-top:12px;min-height:18px;font-weight:600;"></p>
+      </div>
+      <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,0.07);">
+        <div style="font-size:17px;font-weight:800;color:#1e293b;margin-bottom:20px;">🔑 Đổi mật khẩu</div>
+        <div style="background:#fff7ed;border-radius:12px;padding:14px;margin-bottom:20px;font-size:13px;color:#92400e;font-weight:600;">
+          ⚠️ Mật khẩu phải có ít nhất 4 ký tự.
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:#475569;margin-bottom:7px;font-weight:700;">Mật khẩu hiện tại 🔒</label>
+          <input id="prof-old-pw" type="password" placeholder="Nhập mật khẩu hiện tại" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;color:#1e293b;outline:none;">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:#475569;margin-bottom:7px;font-weight:700;">Mật khẩu mới 🆕</label>
+          <input id="prof-new-pw" type="password" placeholder="Nhập mật khẩu mới" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;color:#1e293b;outline:none;">
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:13px;color:#475569;margin-bottom:7px;font-weight:700;">Xác nhận mật khẩu mới ✅</label>
+          <input id="prof-confirm-pw" type="password" placeholder="Nhập lại mật khẩu mới" style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:14px;font-family:inherit;color:#1e293b;outline:none;">
+        </div>
+        <button onclick="changePassword()" id="btn-change-pw" style="width:100%;padding:13px;background:linear-gradient(135deg,#0f766e,#0d9488);color:white;border:none;border-radius:10px;cursor:pointer;font-size:15px;font-family:inherit;font-weight:700;box-shadow:0 4px 14px rgba(15,118,110,0.35);">🔑 Đổi mật khẩu</button>
+        <p id="pw-msg" style="font-size:13px;margin-top:12px;min-height:18px;font-weight:600;"></p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox-overlay" id="lightbox" onclick="closeLightbox()">
+  <span class="lightbox-close" onclick="closeLightbox()">✕</span>
+  <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbzQSwIyWDcqmp3DByiAMi1xmfwQN7vs6BtBj2a4lcGtCY7iNmqThyqtJiuqrA1-0FKr/exec";
+
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+if (!user || String(user.role || "").toLowerCase().trim() !== "teacher") {
+  alert("Bạn không có quyền truy cập trang này!");
+  window.location.href = "index.html";
+}
+document.getElementById("user-name").textContent = "👋 " + user.ho_ten;
+
+function showTab(id, el) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("tab-" + id).classList.add("active");
+  if (el) el.classList.add("active");
+
+  if (id === "approved")  loadApproved();
+  if (id === "exchanged") loadExchanged();
+  if (id === "done")      loadTransactions();
+  if (id === "profile")   initProfile();
+}
+
+function logout() {
+  if (confirm("Bạn có chắc muốn đăng xuất?")) {
+    localStorage.removeItem("user");
+    window.location.href = "index.html";
+  }
+}
+
+function call(body) {
+  return fetch(API, {
+    method: "POST", redirect: "follow",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(body)
+  }).then(r => r.text()).then(t => JSON.parse(t));
+}
+
+function imgHtml(url, alt) {
+  if (!url) return `<div class="card-img-placeholder">📦</div>`;
+  return `<div style="width:100%;height:160px;overflow:hidden;cursor:zoom-in;" onclick="openLightbox('${url}')">
+    <img style="width:100%;height:160px;object-fit:cover;display:block;transition:transform 0.2s;"
+      onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'"
+      src="${url}" alt="${alt || ''}"
+      onerror="this.parentElement.outerHTML='<div class=\\'card-img-placeholder\\'>📦</div>';">
+  </div>`;
+}
+
+/* ====== CHỜ DUYỆT ====== */
+function loadPending() {
+  const el = document.getElementById("pending-list");
+  el.innerHTML = '<p class="loading-text">⏳ Đang tải...</p>';
+
+  call({ action: "getPending" }).then(data => {
+    const count = Array.isArray(data) ? data.length : 0;
+    document.getElementById("stat-pending").textContent = count;
+    document.getElementById("count-pending").textContent = count;
+
+    if (count === 0) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><div>Không có đồ vật nào chờ duyệt</div></div>';
+      return;
+    }
+    el.innerHTML = data.map(item => `
+      <div class="card" id="card-${item.id}">
+        ${imgHtml(item.hinh_anh, item.ten_do)}
+        <div class="card-body">
+          <div class="card-title">${item.ten_do}</div>
+          <div class="card-owner">👤 ${item.ho_ten}</div>
+          <div class="card-desc">${item.mo_ta || "Không có mô tả"}</div>
+          <div class="btn-row">
+            <button class="btn-approve" onclick="approve('${item.id}')">✓ Duyệt</button>
+            <button class="btn-reject"  onclick="reject('${item.id}')">✗ Từ chối</button>
+          </div>
+        </div>
+      </div>
+    `).join("");
+  }).catch(() => el.innerHTML = '<div class="empty">❌ Lỗi tải dữ liệu</div>');
+}
+
+/* ====== ĐÃ DUYỆT / CHỜ ĐỔI ====== */
+function loadApproved() {
+  const el = document.getElementById("approved-list");
+  el.innerHTML = '<p class="loading-text">⏳ Đang tải...</p>';
+
+  call({ action: "getMarket" }).then(data => {
+    document.getElementById("stat-approved").textContent = Array.isArray(data) ? data.length : 0;
+
+    if (!Array.isArray(data) || data.length === 0) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div>Chưa có đồ vật nào được duyệt</div></div>';
+      return;
+    }
+    el.innerHTML = data.map(item => `
+      <div class="card">
+        ${imgHtml(item.hinh_anh, item.ten_do)}
+        <div class="card-body">
+          <span class="badge badge-approved">✅ Đã duyệt</span>
+          <div class="card-title">${item.ten_do}</div>
+          <div class="card-owner">👤 ${item.ho_ten}</div>
+          <div class="card-desc">${item.mo_ta || "Không có mô tả"}</div>
+        </div>
+      </div>
+    `).join("");
+  }).catch(() => el.innerHTML = '<div class="empty">❌ Lỗi tải dữ liệu</div>');
+}
+
+/* ====== ĐÃ TRAO ĐỔI ====== */
+function loadExchanged() {
+  const el = document.getElementById("exchanged-list");
+  el.innerHTML = '<p class="loading-text">⏳ Đang tải...</p>';
+
+  call({ action: "getExchanged" }).then(data => {
+    document.getElementById("stat-exchanged").textContent = Array.isArray(data) ? data.length : 0;
+
+    if (!Array.isArray(data) || data.length === 0) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🔄</div><div>Chưa có món đồ nào được trao đổi</div></div>';
+      return;
+    }
+    el.innerHTML = data.map(item => `
+      <div class="card">
+        ${imgHtml(item.hinh_anh, item.ten_do)}
+        <div class="card-body">
+          <span class="badge badge-exchanged">🔄 Đã trao đổi</span>
+          <div class="card-title">${item.ten_do}</div>
+          <div class="card-owner">👤 ${item.ho_ten}</div>
+          <div class="card-desc">${item.mo_ta || "Không có mô tả"}</div>
+        </div>
+      </div>
+    `).join("");
+  }).catch(() => el.innerHTML = '<div class="empty">❌ Lỗi tải dữ liệu</div>');
+}
+
+/* ====== ĐÃ ĐỔI THÀNH CÔNG ====== */
+function loadTransactions() {
+  const tbody = document.getElementById("trans-list");
+  tbody.innerHTML = '<tr><td colspan="5" class="loading-text">⏳ Đang tải...</td></tr>';
+
+  call({ action: "getTransactions" }).then(data => {
+    document.getElementById("stat-done").textContent = Array.isArray(data) ? data.length : 0;
+
+    if (!Array.isArray(data) || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#94a3b8;font-weight:600;">🔄 Chưa có lần trao đổi nào</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map((t, i) => `
+      <tr>
+        <td style="font-weight:700;color:#0f766e;">${i + 1}</td>
+        <td><strong>${t.user1}</strong></td>
+        <td><strong>${t.user2}</strong></td>
+        <td>${t.ten_do}</td>
+        <td style="color:#4a6cf7;font-weight:600;">${t.offer_ten_do || "—"}</td>
+        <td style="font-size:12px;color:#94a3b8;">${t.thoi_gian}</td>
+      </tr>
+    `).join("");
+  }).catch(() => {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#ef4444;">❌ Lỗi tải dữ liệu</td></tr>';
+  });
+}
+
+/* ====== DUYỆT ====== */
+function approve(id) {
+  const card = document.getElementById("card-" + id);
+  if (card) card.style.opacity = "0.6";
+
+  call({ action: "approveItem", id }).then(data => {
+    if (data.status === "approved") {
+      loadPending();
+      // Cập nhật stat approved
+      call({ action: "getMarket" }).then(m => {
+        document.getElementById("stat-approved").textContent = Array.isArray(m) ? m.length : 0;
+      });
+    } else {
+      alert("❌ Lỗi duyệt đồ!");
+      if (card) card.style.opacity = "1";
+    }
+  }).catch(() => {
+    alert("❌ Không kết nối được API!");
+    if (card) card.style.opacity = "1";
+  });
+}
+
+/* ====== TỪ CHỐI ====== */
+function reject(id) {
+  if (!confirm("Bạn có chắc muốn từ chối đồ vật này?")) return;
+  const card = document.getElementById("card-" + id);
+  if (card) card.style.opacity = "0.6";
+
+  call({ action: "rejectItem", id }).then(data => {
+    if (data.status === "rejected") {
+      loadPending();
+    } else {
+      alert("❌ Lỗi từ chối!");
+      if (card) card.style.opacity = "1";
+    }
+  }).catch(() => {
+    alert("❌ Không kết nối được API!");
+    if (card) card.style.opacity = "1";
+  });
+}
+
+// Khởi động - load stats
+Promise.all([
+  call({ action: "getPending" }),
+  call({ action: "getMarket" }),
+  call({ action: "getExchanged" }),
+  call({ action: "getTransactions" })
+]).then(([pending, market, exchanged, trans]) => {
+  document.getElementById("stat-pending").textContent   = Array.isArray(pending)   ? pending.length   : 0;
+  document.getElementById("stat-approved").textContent  = Array.isArray(market)    ? market.length    : 0;
+  document.getElementById("stat-exchanged").textContent = Array.isArray(exchanged) ? exchanged.length : 0;
+  document.getElementById("stat-done").textContent      = Array.isArray(trans)     ? trans.length     : 0;
+  document.getElementById("count-pending").textContent  = Array.isArray(pending)   ? pending.length   : 0;
+});
+
+loadPending();
+
+/* ====== LIGHTBOX ====== */
+function openLightbox(url) {
+  document.getElementById("lightbox-img").src = url;
+  document.getElementById("lightbox").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+function closeLightbox() {
+  document.getElementById("lightbox").classList.remove("show");
+  document.body.style.overflow = "";
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeLightbox(); });
+
+/* ====== THÔNG TIN CÁ NHÂN ====== */
+function initProfile() {
+  document.getElementById("prof-name-display").textContent = user.ho_ten || "—";
+  document.getElementById("prof-email-display").textContent = user.email || "Chưa cập nhật";
+  document.getElementById("prof-avatar").textContent = (user.ho_ten || "?")[0].toUpperCase();
+  document.getElementById("prof-hoten").value = user.ho_ten || "";
+  document.getElementById("prof-email").value = user.email || "";
+  document.getElementById("info-msg").textContent = "";
+  document.getElementById("pw-msg").textContent = "";
+  document.getElementById("prof-old-pw").value = "";
+  document.getElementById("prof-new-pw").value = "";
+  document.getElementById("prof-confirm-pw").value = "";
+}
+
+function saveProfileInfo() {
+  const ho_ten = document.getElementById("prof-hoten").value.trim();
+  const email  = document.getElementById("prof-email").value.trim();
+  const btn    = document.getElementById("btn-save-info");
+  const msg    = document.getElementById("info-msg");
+  if (!ho_ten) { msg.textContent = "⚠️ Vui lòng nhập họ tên!"; msg.style.color = "#ef4444"; return; }
+  btn.disabled = true; btn.textContent = "⏳ Đang lưu..."; msg.textContent = "";
+  call({ action: "updateProfile", user_id: user.user_id, ho_ten, email })
+    .then(data => {
+      if (data.status === "success") {
+        user.ho_ten = data.ho_ten; user.email = data.email;
+        localStorage.setItem("user", JSON.stringify(user));
+        document.getElementById("user-name").textContent = "👋 " + user.ho_ten;
+        initProfile();
+        msg.textContent = "✅ Đã lưu thành công!"; msg.style.color = "#16a34a";
+      } else {
+        msg.textContent = "❌ " + (data.message || "Lỗi không xác định"); msg.style.color = "#ef4444";
+      }
+    })
+    .catch(() => { msg.textContent = "❌ Lỗi kết nối!"; msg.style.color = "#ef4444"; })
+    .finally(() => { btn.disabled = false; btn.textContent = "💾 Lưu thông tin"; });
+}
+
+function changePassword() {
+  const oldPw  = document.getElementById("prof-old-pw").value.trim();
+  const newPw  = document.getElementById("prof-new-pw").value.trim();
+  const confPw = document.getElementById("prof-confirm-pw").value.trim();
+  const btn    = document.getElementById("btn-change-pw");
+  const msg    = document.getElementById("pw-msg");
+  if (!oldPw || !newPw || !confPw) { msg.textContent = "⚠️ Vui lòng điền đầy đủ!"; msg.style.color = "#ef4444"; return; }
+  if (newPw !== confPw) { msg.textContent = "❌ Mật khẩu xác nhận không khớp!"; msg.style.color = "#ef4444"; return; }
+  if (newPw.length < 4) { msg.textContent = "❌ Mật khẩu mới phải có ít nhất 4 ký tự!"; msg.style.color = "#ef4444"; return; }
+  btn.disabled = true; btn.textContent = "⏳ Đang đổi..."; msg.textContent = "";
+  call({ action: "updateProfile", user_id: user.user_id, old_password: oldPw, new_password: newPw })
+    .then(data => {
+      if (data.status === "success") {
+        msg.textContent = "✅ Đổi mật khẩu thành công!"; msg.style.color = "#16a34a";
+        ["prof-old-pw","prof-new-pw","prof-confirm-pw"].forEach(id => document.getElementById(id).value = "");
+      } else if (data.status === "wrong_password") {
+        msg.textContent = "❌ Mật khẩu hiện tại không đúng!"; msg.style.color = "#ef4444";
+      } else {
+        msg.textContent = "❌ " + (data.message || "Lỗi không xác định"); msg.style.color = "#ef4444";
+      }
+    })
+    .catch(() => { msg.textContent = "❌ Lỗi kết nối!"; msg.style.color = "#ef4444"; })
+    .finally(() => { btn.disabled = false; btn.textContent = "🔑 Đổi mật khẩu"; });
+}
+</script>
+</body>
+</html>
